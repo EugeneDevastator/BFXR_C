@@ -111,7 +111,6 @@ jobs:
               libxcursor-dev libxi-dev libgl1-mesa-dev libasound2-dev
             cmake -B build -DCMAKE_BUILD_TYPE=Release
             cmake --build build -- -j\$(nproc)
-            file build/bfxr build/bfxr_gui
             ./build/bfxr random test.wav && ls -la test.wav && rm -f test.wav
           "
 
