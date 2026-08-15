@@ -201,13 +201,15 @@ int ui_blend_slider_handle_input(UiBlendSlider* slider, int mx, int my) {
 
 // Volume slider
 void ui_volume_slider_draw(UiVolumeSlider* slider, Font font, int font_size) {
-    DrawTextEx(font, "Vol", (Vector2){slider->x - 30, slider->y}, font_size, 1, DARKGRAY);
+    int gap = 8;
+    Vector2 lbl_w = MeasureTextEx(font, "Vol", font_size, 1);
+    DrawTextEx(font, "Vol", (Vector2){slider->x - lbl_w.x - gap, slider->y}, font_size, 1, DARKGRAY);
     DrawRectangle(slider->x, slider->y, slider->w, 10, (Color){200, 200, 200, 255});
     int vol_filled = (int)(slider->value * slider->w);
     if (vol_filled > 0) {
         DrawRectangle(slider->x, slider->y, vol_filled, 10, (Color){200, 160, 40, 255});
     }
-    DrawTextEx(font, TextFormat("%.2f", slider->value), (Vector2){slider->x + slider->w + 6, slider->y - 4}, font_size - 4, 1, DARKGRAY);
+    DrawTextEx(font, TextFormat("%.2f", slider->value), (Vector2){slider->x + slider->w + gap, slider->y - 4}, font_size - 4, 1, DARKGRAY);
 }
 
 int ui_volume_slider_handle_input(UiVolumeSlider* slider, int mx, int my) {

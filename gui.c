@@ -252,7 +252,7 @@ int main(void) {
 
         int CTRL_H = 28;
         int ctrl_y = PANEL_Y + 8;
-        int vol_y = ctrl_y + CTRL_H + 4;
+        int vol_y = ctrl_y + CTRL_H + 36;
         int status_y = vol_y + CTRL_H + 4;
         int BTN_START = status_y + CTRL_H + 8;
 
@@ -508,7 +508,16 @@ int main(void) {
         DrawTextEx(_font, "Autoplay Blend", (Vector2){cx + 34, ctrl_y + 34}, SLIDER_FONT_SIZE, 1, DARKGRAY);
 
         UiVolumeSlider vol_slider;
-        ui_volume_slider_init(&vol_slider, cx + 140, vol_y, cw - 160, 10);
+        {
+            int gap = 8;
+            Vector2 vol_lbl_w = MeasureTextEx(_font, "Vol", SLIDER_FONT_SIZE, 1);
+            Vector2 vol_val_w = MeasureTextEx(_font, "1.00", SLIDER_FONT_SIZE - 4, 1);
+            int vol_w = cw - (int)vol_lbl_w.x - (int)vol_val_w.x - gap * 3;
+            if (vol_w < 60) vol_w = 60;
+            int vol_total = (int)vol_lbl_w.x + gap + vol_w + gap + (int)vol_val_w.x;
+            int vol_x = cx + (cw - vol_total) / 2 + (int)vol_lbl_w.x + gap;
+            ui_volume_slider_init(&vol_slider, vol_x, vol_y, vol_w, 10);
+        }
         vol_slider.value = state.global_volume;
         if (ui_volume_slider_handle_input(&vol_slider, mx, my)) {
             state.global_volume = vol_slider.value;
