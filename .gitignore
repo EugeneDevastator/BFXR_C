@@ -1,0 +1,35 @@
+# Build output
+/build/
+build_*/
+*.o
+*.obj
+*.a
+*.lib
+*.exe
+*.so
+*.dylib
+*.dll
+
+# Local binaries produced by manual gcc runs
+/bfxr
+/bfxrc
+/bfxr_cli
+/bfxr_gui
+
+# Runtime / user data
+bfxr.cfg
+lastscene.bfxr
+Export/
+*.wav
+
+# Backups
+*.bak
+*.backup
+*.old
+
+# Archives
+*.zip
+
+# IDE
+.vscode/
+.idea/

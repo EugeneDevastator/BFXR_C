@@ -1,0 +1,165 @@
+name: build
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    name: Windows (${{ matrix.msystem }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - msystem: MINGW64
+            toolchain: x86_64
+            arch: x64
+          - msystem: MINGW32
+            toolchain: i686
+            arch: x86
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{ matrix.msystem }}
+          update: true
+          install: >-
+            git
+            mingw-w64-${{ matrix.toolchain }}-toolchain
+            mingw-w64-${{ matrix.toolchain }}-cmake
+            mingw-w64-${{ matrix.toolchain }}-ninja
+            mingw-w64-${{ matrix.toolchain }}-gcc
+
+      - name: Configure
+        run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Smoke test (CLI)
+        run: |
+          ./build/bfxr.exe random test.wav
+          ls -la test.wav
+          rm -f test.wav
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: bfxr-windows-${{ matrix.arch }}
+          path: |
+            build/bfxr.exe
+            build/bfxr_gui.exe
+            build/Cadman_Bold.otf
+
+  linux-x64:
+    name: Linux (x86_64)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential cmake git \
+            libx11-dev libxrandr-dev libxinerama-dev \
+            libxcursor-dev libxi-dev libgl1-mesa-dev libasound2-dev
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build -- -j$(nproc)
+
+      - name: Smoke test (CLI)
+        run: |
+          ./build/bfxr random test.wav
+          ls -la test.wav
+          rm -f test.wav
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: bfxr-linux-x86_64
+          path: |
+            build/bfxr
+            build/bfxr_gui
+            build/Cadman_Bold.otf
+
+  linux-x86:
+    name: Linux (i386)
+    runs-on: ubuntu-latest
+    container:
+      image: i386/ubuntu:22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y \
+            build-essential cmake git \
+            libx11-dev libxrandr-dev libxinerama-dev \
+            libxcursor-dev libxi-dev libgl1-mesa-dev libasound2-dev
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build -- -j$(nproc)
+
+      - name: Smoke test (CLI)
+        run: |
+          ./build/bfxr random test.wav
+          ls -la test.wav
+          rm -f test.wav
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: bfxr-linux-i386
+          path: |
+            build/bfxr
+            build/bfxr_gui
+            build/Cadman_Bold.otf
+
+  macos:
+    name: macOS (universal arm64 + x86_64)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: brew install cmake
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+
+      - name: Build
+        run: cmake --build build -- -j$(sysctl -n hw.ncpu)
+
+      - name: Verify architectures
+        run: file build/bfxr build/bfxr_gui
+
+      - name: Smoke test (CLI)
+        run: |
+          ./build/bfxr random test.wav
+          ls -la test.wav
+          rm -f test.wav
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: bfxr-macos-universal
+          path: |
+            build/bfxr
+            build/bfxr_gui
+            build/Cadman_Bold.otf
