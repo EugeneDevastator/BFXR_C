@@ -155,3 +155,39 @@ jobs:
             build/bfxr
             build/bfxr_gui
             build/Cadman_Bold.otf
+
+  release:
+    name: Publish Latest release
+    needs: [windows, linux-x64, linux-x86, macos]
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: Package artifacts into zips
+        run: |
+          cd dist
+          for dir in */; do
+            name="${dir%/}"
+            (cd "$dir" && zip -r "../${name}.zip" .)
+          done
+          ls -la
+
+      - name: Delete previous latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release delete latest --yes --cleanup-tag 2>/dev/null || true
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create latest dist/*.zip \
+            --title "Latest build (${{ github.sha }})" \
+            --notes "Automatic build from commit ${{ github.sha }}. Covers Windows x64/x86, Linux x86_64/i386, macOS universal."
