@@ -97,30 +97,23 @@ jobs:
   linux-x86:
     name: Linux (i386)
     runs-on: ubuntu-latest
-    container:
-      image: i386/debian:bookworm
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Build in i386 container
         run: |
-          apt-get update
-          apt-get install -y \
-            build-essential cmake git \
-            libx11-dev libxrandr-dev libxinerama-dev \
-            libxcursor-dev libxi-dev libgl1-mesa-dev libasound2-dev
-
-      - name: Configure
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
-
-      - name: Build
-        run: cmake --build build -- -j$(nproc)
-
-      - name: Smoke test (CLI)
-        run: |
-          ./build/bfxr random test.wav
-          ls -la test.wav
-          rm -f test.wav
+          docker run --rm -v "$PWD:/src" -w /src i386/debian:bookworm bash -c "
+            set -e
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get update -qq
+            apt-get install -y -qq build-essential cmake git \
+              libx11-dev libxrandr-dev libxinerama-dev \
+              libxcursor-dev libxi-dev libgl1-mesa-dev libasound2-dev
+            cmake -B build -DCMAKE_BUILD_TYPE=Release
+            cmake --build build -- -j\$(nproc)
+            file build/bfxr build/bfxr_gui
+            ./build/bfxr random test.wav && ls -la test.wav && rm -f test.wav
+          "
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
